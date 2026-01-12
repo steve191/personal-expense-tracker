@@ -180,10 +180,10 @@ class BankStatementRecon(ttk.Frame):
             messagebox.showwarning('Required', 'Select a transaction first, then choose a category')
             return
         
-        popup = ttk.Toplevel(self)
+        popup = ttk.Toplevel(self.winfo_toplevel())
         popup.title("Create Auto-Sort Rule")
         popup.geometry("350x150")
-        popup.transient(self)
+        popup.transient(self.winfo_toplevel())
         popup.grab_set()
         
         frame = ttk.Frame(popup, padding=20)

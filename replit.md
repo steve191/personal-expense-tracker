@@ -44,6 +44,9 @@ A Python desktop application for managing personal income and expenses. Built wi
 ## Running the Application
 Run via VNC desktop view: `python main.py`
 
+## Building as Executable
+See `BUILD.md` for instructions on compiling the app to a standalone Windows .exe file using PyInstaller.
+
 ## Recent Changes
 - January 12, 2026: Major UI modernization with ttkbootstrap dark theme
 - January 12, 2026: Code refactoring - centralized database operations, removed globals

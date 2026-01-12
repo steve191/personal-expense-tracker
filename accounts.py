@@ -1,164 +1,100 @@
-import re
-import sqlite3
-from tkinter import *
-from tkinter import ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+import database as db
+from theme import create_styled_treeview, create_labelframe
 
 
-def query_database():
-	conn = sqlite3.connect('database.db')
-	c = conn.cursor()
-
-	# Get all transactions from bank account tables
-	c.execute("SELECT account FROM bankAccountNames")
-	bank_acc_names = c.fetchall()
-
-	all_bank_records = []
-	for acc_name in bank_acc_names:
-		c.execute(f'SELECT amount, category FROM {acc_name[0]}')
-		bank_records = c.fetchall()
-
-		for rec in bank_records:
-			all_bank_records.append(rec)	
-
-	# Get all categories from category table
-	c.execute("SELECT * FROM category")
-	cat_records = c.fetchall()
-
-	# Commit changes
-	conn.commit()
-	conn.close()
-
-	# Sort Category and Amounts
-	if len(all_bank_records) > 0:
-		cat_total = {}
-
-		# Add categories from category table to cat_total dic
-		for x in cat_records:
-			cat = x[0]
-			budget = x[1]
-
-			if "Please Select" not in cat_total.keys():
-				cat_total["Please Select"] = [0.0]  
-				cat_total["Please Select"].append('None')
-
-			if cat not in cat_total.keys():
-				cat_total[cat] = [0.0]  
-				cat_total[cat].append(budget)
-
-		# Add transactions from bankstatements to cat_total dic
-		for x in all_bank_records:
-			amount = x[0]
-			cat = x[1]
-
-			if cat == "Please Select":
-				cat_total[cat][0] += abs(float(amount))
-			else:
-				cat_total[cat][0] += float(amount)
-		
-		# Change name and order dict
-		cat_total['Uncategorised'] = cat_total.pop('Please Select')
-
-		cat_total_sorted = dict(sorted(cat_total.items()))
-
-		return cat_total_sorted
-	
-def accounts_build():
-	# Get data from database
-	database = query_database()
-
-	if database != None:
-		# add data to tree
-		global count
-		count = 0
-		for key, value in database.items():
-			amount = value[0]
-			budget = value[1]
-
-			# Format amount
-			if amount < 0.0:
-				amount = "{:.2f}".format(amount*-1,)
-
-			# Check over/under/near
-			if budget == 'None':
-				budget = '-'
-				over_under = '-'
-			# elif amt >= (float(bud) - float(2000)) or amt <= bud:
-				# if with in certain percent of budget
-			elif float(amount) < float(budget):
-				over_under = 'Within'
-			else:
-				over_under = 'OVER'
-
-			# Display Data In Table
-			if count % 2 == 0:
-				my_tree.insert(parent='', index='end', iid=count, text='', values=(key, round(float(amount), 2), budget, over_under), tags=('evenrow',))
-			else:
-				my_tree.insert(parent='', index='end', iid=count, text='', values=(key, round(float(amount), 2), budget, over_under), tags=('oddrow',))
-			# increment counter
-			count += 1
-
-class Accounts(Frame):
-	def __init__(self, parent, *args, **kwargs):
-		super().__init__(parent, *args, **kwargs)
-
-		# SETUP TREE VIEW
-		# Add Some Style
-		style = ttk.Style()
-
-		# Pick A Theme
-		style.theme_use('default')
-
-		# Configure the Treeview Colors
-		style.configure("Treeview",
-			background="#D3D3D3",
-			foreground="black",
-			rowheight=25,
-			fieldbackground="#D3D3D3")
-
-		# Change Selected Color
-		style.map('Treeview',
-			background=[('selected', "#347083")])
-
-		# Create a Treeview Frame
-		tree_frame = Frame(self)
-		tree_frame.pack(pady=10)		
-
-		# Create a Treeview Scrollbar
-		tree_scroll = Scrollbar(tree_frame)
-		tree_scroll.pack(side=RIGHT, fill=Y)
-
-		# Create The Treeview
-		global my_tree
-		my_tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set, selectmode="extended")
-		my_tree.pack()
-
-		# Configure the Scrollbar
-		tree_scroll.config(command=my_tree.yview)
-
-		# Define Columns
-		my_tree['columns'] = ("Category", "Total Amount", "Category Budget", "Within / Over")
-
-		# Format Columns
-		my_tree.column("#0", width=0, stretch=NO)
-		my_tree.column("Category", anchor=W, width=250)
-		my_tree.column("Total Amount", anchor=W, width=140)
-		my_tree.column("Category Budget", anchor=W, width=140)
-		my_tree.column("Within / Over", anchor=W, width=140)
-
-		# Create Headings
-		my_tree.heading("#0", text="", anchor=W)
-		my_tree.heading("Category", text="Category", anchor=W)
-		my_tree.heading("Total Amount", text="Total Amount", anchor=W)
-		my_tree.heading("Category Budget", text="Category Budget", anchor=W)
-		my_tree.heading("Within / Over", text="Within / Over", anchor=W)
-
-		# Create Striped Row Tags
-		my_tree.tag_configure('oddrow', background="white")
-		my_tree.tag_configure('evenrow', background="lightblue")
-
-		# Build tree
-		accounts_build()
-
-	def refresh(self):
-		my_tree.delete(*my_tree.get_children())
-		accounts_build()
+class Accounts(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        
+        main_container = ttk.Frame(self, padding=20)
+        main_container.pack(fill=BOTH, expand=True)
+        
+        header_frame = ttk.Frame(main_container)
+        header_frame.pack(fill=X, pady=(0, 20))
+        
+        title_label = ttk.Label(
+            header_frame,
+            text="Budget Summary",
+            font=('Segoe UI', 18, 'bold')
+        )
+        title_label.pack(side=LEFT)
+        
+        columns = ("Category", "Total Spent", "Budget Limit", "Status")
+        widths = (200, 120, 120, 100)
+        tree_frame, self.tree = create_styled_treeview(main_container, columns, widths)
+        tree_frame.pack(fill=BOTH, expand=True)
+        
+        self.tree.tag_configure('over', foreground='#d9534f')
+        self.tree.tag_configure('within', foreground='#02b875')
+        self.tree.tag_configure('no_budget', foreground='#adb5bd')
+        
+        self.load_data()
+    
+    def calculate_totals(self):
+        all_transactions = db.get_all_transactions()
+        all_categories = db.get_all_categories_with_budget()
+        
+        if not all_transactions:
+            return None
+        
+        cat_totals = {}
+        
+        cat_totals["Please Select"] = [0.0, 'None']
+        
+        for cat, budget in all_categories:
+            if cat not in cat_totals:
+                cat_totals[cat] = [0.0, budget]
+        
+        for amount, category in all_transactions:
+            if category not in cat_totals:
+                cat_totals[category] = [0.0, 'None']
+            
+            try:
+                if category == "Please Select":
+                    cat_totals[category][0] += abs(float(amount))
+                else:
+                    cat_totals[category][0] += float(amount)
+            except (ValueError, TypeError):
+                pass
+        
+        if "Please Select" in cat_totals:
+            cat_totals['Uncategorized'] = cat_totals.pop('Please Select')
+        
+        return dict(sorted(cat_totals.items()))
+    
+    def load_data(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        
+        data = self.calculate_totals()
+        
+        if not data:
+            return
+        
+        for i, (category, values) in enumerate(data.items()):
+            amount = values[0]
+            budget = values[1]
+            
+            display_amount = abs(amount) if amount < 0 else amount
+            display_amount = f"${display_amount:,.2f}"
+            
+            if budget == 'None':
+                display_budget = '-'
+                status = '-'
+                row_tag = 'no_budget'
+            else:
+                display_budget = f"${float(budget):,.2f}"
+                if abs(amount) < float(budget):
+                    status = 'Within Budget'
+                    row_tag = 'within'
+                else:
+                    status = 'OVER BUDGET'
+                    row_tag = 'over'
+            
+            base_tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            self.tree.insert('', 'end', values=(category, display_amount, display_budget, status), tags=(base_tag,))
+    
+    def refresh(self):
+        self.load_data()

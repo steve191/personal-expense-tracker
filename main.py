@@ -1,519 +1,224 @@
-import sqlite3
-from tkinter import *
-import tkinter as tk
-import tkinter.ttk as ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 from tkinter import messagebox
-# from options import Options
+import database as db
+from theme import THEME_NAME, create_styled_treeview, create_button, create_entry, create_label, create_labelframe, configure_treeview_style
 from categories import Categories
 from category_rules import CategoryRules
 from bank_statement_recon import BankStatementRecon
 from accounts import Accounts
 
 
-import init_database as indata
-from category_rules import auto_apply_rules
-
-
-class Options(Frame):
-	def __init__(self, parent, *args, **kwargs):
-		super().__init__(parent, *args, **kwargs)
-
-		# SETUP DATABASE
-		indata.init_database()
-
-		# SORT RULES
-		# auto_apply_rules()
-
-		# SELECT OPTIONS
-		# SETUP
-		COLUMNS = {'A': 0,
-		'B': 1,
-		'C': 2,
-		'D': 3,
-		'E': 4,
-		'F': 5,
-		'G': 6,
-		'H': 7,
-		'I': 8,
-		'J': 9,
-		'K': 10,
-		'L': 11,
-		'M': 12,
-		'N': 13,
-		'O': 14,
-		'P': 15,
-		'Q': 16,
-		'R': 17,
-		'S': 18,
-		'T': 19,
-		'U': 20,
-		'V': 21,
-		'W': 22,
-		'X': 23,
-		'Y': 24,
-		'Z': 25,
-		}
-
-		# Create reverse dic to lookup letter
-		COLUMNS_LOOKUP = {v: k for k, v in COLUMNS.items()}
-		
-		# #############################################################################################
-		# PROGRAM 
-		# OFX Frame
-		# #############################################################################################  
-		def selected():
-			con = sqlite3.connect('database.db')
-			c = con.cursor()
-
-			query = "UPDATE ofxCsv SET selected = ? WHERE id = ?"
-
-			c.execute(query, (int(str(var.get())), 0))  
-
-			con.commit()
-			con.close()
-
-		# Buttons
-		ofx_frame = LabelFrame(self, text="OFX or CSV")
-		# ofx_frame.pack(fill="x", padx=20)
-		# ofx_frame.pack(padx=20, pady=(20, 50))
-		ofx_frame.grid(row=0, column=0, padx=20, pady=(20, 50))
-
-		choose_label = Label(ofx_frame, text="Date")
-		choose_label.grid(row=1, column=0, padx=10, pady=10, sticky=E)
-
-		var = IntVar()
-		choose_csv = Radiobutton(ofx_frame, text="CSV", variable=var, value=1, command=selected)
-		choose_csv.grid(row=1, column=0, padx=10, pady=10, sticky=E)
-		choose_ofx = Radiobutton(ofx_frame, text="OFX", variable=var, value=2, command=selected)
-		choose_ofx.grid(row=1, column=2, padx=10, pady=10, sticky=E)
-
-		# Dispaly current settings in entrys
-		def display_choice(): 
-			con = sqlite3.connect('database.db')
-			c = con.cursor()
-
-			c.execute("SELECT selected FROM ofxCsv")
-			records = c.fetchall() 
-
-			select = records[0][0]
-
-			if select == 1:
-				choose_csv.invoke()
-			else:
-				choose_ofx.invoke()
-
-			con.commit()
-			con.close()
-			
-		# #############################################################################################
-		# CSV Frame
-		# ############################################################################################# 
-		
-		bs_frame = LabelFrame(self, text="CSV Bank Statement Setup")
-		# bs_frame.pack(fill="x", padx=20)
-		bs_frame.grid(row=1, column=0, sticky=N, padx=20, pady=(0,0))
-
-		# Explain Setup
-		id_label = Label(bs_frame, text="Please State which column the following is in using 'A, B, C, ETC'")
-		id_label.grid(columnspan=2 , padx=(5,5), pady=10)
-
-		# Inputs
-		date_label = Label(bs_frame, text="Date")
-		date_label.grid(row=1, column=0, padx=10, pady=10, sticky=E)
-		date_entry = Entry(bs_frame)
-		date_entry.grid(row=1, column=1, padx=10, pady=10, sticky=W)
-
-		amount_label = Label(bs_frame, text="Amount")
-		amount_label.grid(row=2, column=0, padx=10, pady=10, sticky=E)
-		amount_entry = Entry(bs_frame)
-		amount_entry.grid(row=2, column=1, padx=10, pady=10, sticky=W)
-
-		description_label = Label(bs_frame, text="Description")
-		description_label.grid(row=3, column=0, padx=10, pady=10, sticky=E)
-		description_entry = Entry(bs_frame)
-		description_entry.grid(row=3, column=1, padx=10, pady=10, sticky=W)
-
-		# Functions
-		# Dispaly current settings in entrys
-		def display_entry(): 
-			con = sqlite3.connect('database.db')
-			c = con.cursor()
-
-			c.execute("SELECT * FROM options")
-			records = c.fetchall() 
-
-			for x in records:
-				date_entry.insert(0, COLUMNS_LOOKUP.get(x[1]))
-				amount_entry.insert(0, COLUMNS_LOOKUP.get(x[2]))
-				description_entry.insert(0, COLUMNS_LOOKUP.get(x[3]))
-
-			con.commit()
-
-		# Get Options
-		def get_csv_options():
-			d = date_entry.get()
-			amt = amount_entry.get()
-			des = description_entry.get()
-
-			aws = messagebox.askyesno('SAVE', 'Are You Sure You Want To Save?')
-			if aws == 1:
-				try:
-					date = COLUMNS[d.upper()]
-					amount = COLUMNS[amt.upper()]
-					description = COLUMNS[des.upper()]
-
-					# Connect to database 
-					con = sqlite3.connect('database.db')
-					c = con.cursor()
-
-					query = ''' UPDATE options SET 
-										date = ?, 
-										amount = ?,
-										description = ?
-									WHERE 
-										id = ?
-							'''
-
-					c.execute(query, (date, amount, description, 0))       
-
-					con.commit()
-					
-					# Update entry display
-					date_entry.delete(0, END)
-					amount_entry.delete(0, END)
-					description_entry.delete(0, END)
-					display_entry()
-
-					messagebox.showinfo('SAVED', 'Coulmns Have Been Saved Successfully!')
-
-				except KeyError:
-					messagebox.showerror('ERROR!', 'Only Single Letters Can Be Used, Please Try Again!')
-			else:
-				messagebox.showinfo('SAVE', 'Nothing Happened')        
-		# Buttons
-		save_button = Button(bs_frame, text="Save", command=get_csv_options)
-		save_button.grid(row=4, column=0, columnspan=2, padx=(10,20), pady=10, sticky=NSEW)
-		
-		# #############################################################################################
-		# BANK Frame
-		# ############################################################################################# 
-		b_frame = LabelFrame(self, text="Bank Account Setup")
-		# bs_frame.pack(fill="x", padx=20)
-		b_frame.grid(row=0, column=2, rowspan=2, padx=20, pady=(20, 50)) 
-
-		# Explain Setup
-		id_label = Label(b_frame, text="Add / Remove Bank Accounts")
-		id_label.grid(columnspan=2 , padx=(5,5), pady=10)
-		
-		# SETUP TREE VIEW
-		# Add Some Style
-		style = ttk.Style()
-
-		# Pick A Theme
-		style.theme_use('default')
-
-		# Configure the Treeview Colors
-		style.configure("Treeview",
-			background="#D3D3D3",
-			foreground="black",
-			rowheight=25,
-			fieldbackground="#D3D3D3")
-
-		# Change Selected Color
-		style.map('Treeview',
-			background=[('selected', "#347083")])
-
-		# Create a Treeview Frame
-		tree_frame = Frame(b_frame)
-		tree_frame.grid(row=0, column=0)
-
-		# Create a Treeview Scrollbar
-		tree_scroll = Scrollbar(tree_frame)
-		tree_scroll.pack(side=RIGHT, fill=Y)
-
-		# Create The Treeview
-		global my_tree
-		my_tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set, selectmode="extended")
-		my_tree.pack()
-
-		# Configure the Scrollbar
-		tree_scroll.config(command=my_tree.yview)
-
-		# Define Columns
-		my_tree['columns'] = ("ID", "Bank Account Name")
-
-		# Format Columns
-		my_tree.column("#0", width=0, stretch=NO)
-		my_tree.column("ID", anchor=W, width=50)
-		my_tree.column("Bank Account Name", anchor=W, width=140)
-		
-		# Create Headings
-		my_tree.heading("#0", text="", anchor=W)
-		my_tree.heading("ID", text="ID", anchor=W)
-		my_tree.heading("Bank Account Name", text="Bank Account Name", anchor=W)
-		
-
-		# Create Striped Row Tags
-		my_tree.tag_configure('oddrow', background="white")
-		my_tree.tag_configure('evenrow', background="lightblue")
-
-		# FUNCTIONS
-		global query_database
-		def query_database():
-			# Create a database or connect to one that exists
-			conn = sqlite3.connect('database.db')
-
-			# Create a cursor instance
-			c = conn.cursor()
-
-			c.execute("SELECT rowid, * FROM bankAccountNames")
-			records = c.fetchall()
-			
-			# Add our data to the screen
-			global count
-			count = 0
-
-			for record in records:
-				if count % 2 == 0:
-					my_tree.insert(parent='', index='end', iid=count, text='', values=(record[0], record[1]), tags=('evenrow',))
-				else:
-					my_tree.insert(parent='', index='end', iid=count, text='', values=(record[0], record[1]), tags=('oddrow',))
-				# increment counter
-				count += 1
-
-			# Commit changes
-			conn.commit()
-			conn.close()
-
-		def add_button():
-			try:
-				# Connect to database    
-				con = sqlite3.connect('database.db')
-				c = con.cursor()
-
-				# Get bank account name
-				get_name = name_entry.get()
-
-				# Check name lenth
-				if get_name == '':
-					raise Exception("Name cannot be blank")
-				elif len(get_name) > 25:
-					raise Exception("Name longer than 25 characters")
-
-				# Put name in camelCase
-				name = get_name.lower().split()
-				bank_acc_name = ''
-				for x in range(0, len(name)):
-					if x == 0:
-						bank_acc_name += name[x]
-					else:
-						bank_acc_name += name[x].capitalize()
-				
-				c.execute("INSERT INTO bankAccountNames VALUES (:account)", {'account' : bank_acc_name})
-
-				# Create Bank Statement Table
-				c.execute(f''' CREATE TABLE IF NOT EXISTS {bank_acc_name} (
-						date TEXT,
-						description TEXT,
-						amount TEXT,
-						category TEXT
-					)
-				''')
-			
-				con.commit()
-				con.close()
-
-				# Clear entry
-				name_entry.delete(0, END)
-
-				# Reload tree
-				my_tree.delete(*my_tree.get_children())
-				query_database()
-
-				# Add bank account tabs
-				add_banks()
-			except Exception as error:
-				messagebox.showerror('ERROR', error)
-
-		# def remove_button():
-		# 	pass
-
-		# SETUP ENTRY BOXES AND BUTTONS
-		# Add Record Entry Box
-		data_frame = LabelFrame(b_frame, text="Record")
-		data_frame.grid(row=1, column=0)
-
-		name_label = Label(data_frame, text="Bank Account Name")
-		name_label.grid(row=0, column=0, padx=10, pady=10)
-		name_entry = Entry(data_frame)
-		name_entry.grid(row=0, column=1, padx=10, pady=10)
-
-		# Add button
-		add_button = Button(data_frame, text="Add", command=add_button)
-		add_button.grid(row=2, column=0, columnspan=2, sticky=NSEW, padx=10, pady=10)
-
-		# remove_button = Button(data_frame, text="Remove", command=remove_button)
-		# remove_button.grid(row=3, column=0, columnspan=2, sticky=NSEW, padx=10, pady=10)
-
-		# Run setup functions
-		display_entry()
-		display_choice()
-		query_database()
-
-	def refresh(self):
-		my_tree.delete(*my_tree.get_children())
-		query_database()
-
-
-# #################################################################################################################
-#  NEW MAIN APP
-# #################################################################################################################
-
-root = tk.Tk()
-root.title("Personal Expense Tracker")
-# root.iconbitmap("_internal/Dollar.ico")
-root.geometry("1000x500")
-
-# Create a Notebook widget
-notebook = ttk.Notebook(root)
-notebook.pack(expand=True, fill="both")
-
-# Create the tabs (Frame)
-tab1 = Options(notebook)
-tab2 = Categories(notebook)
-tab3 = CategoryRules(notebook)
-tab4 = Accounts(notebook)
-# tab5 = BankStatementRecon(notebook)
-
-# Add tab to notebook
-notebook.add(tab1, text="Options")
-notebook.add(tab2, text="Categories")
-notebook.add(tab3, text="Category Rules")
-notebook.add(tab4, text="Category Amounts")
-
-# ##########################################
-# Add multiple bank accounts
-# ##########################################
-# List of already added bank accounts
-bank_acc_created = []
-
-# Create new bank acount tabs
-bank_instance = {}
-
-def add_banks():
-	conn = sqlite3.connect('database.db')
-	c = conn.cursor()
-
-	c.execute("SELECT * FROM bankAccountNames")
-	records = c.fetchall()
-
-	conn.commit()
-	conn.close()
-
-	# Loop thhrough and create bankaccount tabs
-	for x in records:
-		name = x[0]
-
-		if name not in bank_acc_created:
-			# Add to created list 
-			bank_acc_created.append(name)
-
-			# Add tab
-			tab_name = name
-			tab_name = BankStatementRecon(notebook, name)
-			notebook.add(tab_name, text=name)
-			bank_instance[name] = tab_name
-
-# ##########################################
-# Update tabs
-# ##########################################
-# Update Categories tab
-def update(event):
-	selected_tab = event.widget.index('current')
-	selected_tab_name = notebook.tab(selected_tab, 'text')
-	# selected_tab = event.widget
-	# print(selected_tab)
-
-	if selected_tab == 0:
-		tab1.refresh()
-
-	if selected_tab == 2:
-		tab3.refresh_cat_rules()
-
-	if selected_tab == 3:
-		tab4.refresh()
-
-	if selected_tab > 3:
-		bank_instance[selected_tab_name].refresh() 
-
-notebook.bind("<<NotebookTabChanged>>", update)
-
-# Add bank accounts if any
-add_banks()
-
-# Start the Tkinter event loop
-root.mainloop()
-
-
-
-
-
-
-
-
-
-
-
-# #################################################################################################################
-#  OLD MAIN APP V3.1.0-Alpha
-# #################################################################################################################
-
-# class App(tk.Tk):
-# 	def __init__(self):
-# 		super().__init__()
-# 		self.title("Tkinter Tabs Example")
-
-# 		# Create the notebook (tabs)
-# 		self.notebook = ttk.Notebook(self)
-
-# 		# Create frames for the tabs
-# 		self.tab1 = Options(self.notebook)
-# 		self.tab2 = Categories(self.notebook)
-# 		self.tab3 = CategoryRules(self.notebook)
-# 		self.tab4 = BankStatementRecon(self.notebook)
-# 		# self.tab5 = Accounts(self.notebook)
-# 		tab5 = Accounts(self.notebook)
-
-# 		# Add tabs to notebook
-# 		self.notebook.add(self.tab1, text="Options")
-# 		self.notebook.add(self.tab2, text="Categories")
-# 		self.notebook.add(self.tab3, text="Category Rules")
-# 		self.notebook.add(self.tab4, text="Bank Statement Recon")
-# 		# self.notebook.add(self.tab5, text="Accounts")
-# 		self.notebook.add(tab5, text="Accounts")
-
-# 		# # Update Accounts tab
-# 		# def update(event):
-# 		# 	# selected_tab = event.widget.index('current')
-# 		# 	selected_tab = event.widget
-# 		# 	print(selected_tab)
-
-# 		# 	for w in selected_tab.info.children():
-# 		# 		print(w)
-	   
-# 		# 	# if selected_tab == 4:
-# 		# 	#     self.tab5.query_database()
-
-# 		# # self.notebook.bind("<<NotebookTabChanged>>", update)
-# 		# self.notebook.bind("<<NotebookTabChanged>>", lambda event: event.widget.winfo_children()[event.widget.index("current")].update())
-		
-# 		tab5.fff()
-
-		
-# 		# Window Setup
-# 		self.notebook.pack(expand=True, fill="both")
-
-# Run App
-# app = App()
-# app.geometry("1000x500")
-# app.mainloop()
+class Options(ttk.Frame):
+    def __init__(self, parent, add_banks_callback, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        
+        self.add_banks_callback = add_banks_callback
+        
+        db.init_database()
+        
+        COLUMNS = {chr(65+i): i for i in range(26)}
+        COLUMNS_LOOKUP = {v: k for k, v in COLUMNS.items()}
+        
+        main_container = ttk.Frame(self, padding=20)
+        main_container.pack(fill=BOTH, expand=True)
+        
+        left_frame = ttk.Frame(main_container)
+        left_frame.pack(side=LEFT, fill=BOTH, padx=(0, 20))
+        
+        ofx_frame = create_labelframe(left_frame, text="Import Format")
+        ofx_frame.pack(fill=X, pady=(0, 20))
+        
+        self.import_var = ttk.IntVar()
+        
+        format_container = ttk.Frame(ofx_frame)
+        format_container.pack(pady=10)
+        
+        csv_radio = ttk.Radiobutton(
+            format_container, 
+            text="CSV Format", 
+            variable=self.import_var, 
+            value=1,
+            command=lambda: db.update_ofx_csv_setting(1),
+            bootstyle="primary-toolbutton"
+        )
+        csv_radio.pack(side=LEFT, padx=10)
+        
+        ofx_radio = ttk.Radiobutton(
+            format_container, 
+            text="OFX Format", 
+            variable=self.import_var, 
+            value=2,
+            command=lambda: db.update_ofx_csv_setting(2),
+            bootstyle="primary-toolbutton"
+        )
+        ofx_radio.pack(side=LEFT, padx=10)
+        
+        current_setting = db.get_ofx_csv_setting()
+        self.import_var.set(current_setting if current_setting else 1)
+        
+        csv_frame = create_labelframe(left_frame, text="CSV Column Mapping")
+        csv_frame.pack(fill=X)
+        
+        info_label = create_label(
+            csv_frame, 
+            text="Specify column letters (A, B, C, etc.) for each field:"
+        )
+        info_label.pack(pady=(0, 15))
+        
+        fields_frame = ttk.Frame(csv_frame)
+        fields_frame.pack(fill=X)
+        
+        create_label(fields_frame, text="Date Column:").grid(row=0, column=0, padx=10, pady=8, sticky=E)
+        self.date_entry = create_entry(fields_frame, width=10)
+        self.date_entry.grid(row=0, column=1, padx=10, pady=8, sticky=W)
+        
+        create_label(fields_frame, text="Amount Column:").grid(row=1, column=0, padx=10, pady=8, sticky=E)
+        self.amount_entry = create_entry(fields_frame, width=10)
+        self.amount_entry.grid(row=1, column=1, padx=10, pady=8, sticky=W)
+        
+        create_label(fields_frame, text="Description Column:").grid(row=2, column=0, padx=10, pady=8, sticky=E)
+        self.desc_entry = create_entry(fields_frame, width=10)
+        self.desc_entry.grid(row=2, column=1, padx=10, pady=8, sticky=W)
+        
+        def save_csv_options():
+            try:
+                d = self.date_entry.get().upper()
+                amt = self.amount_entry.get().upper()
+                desc = self.desc_entry.get().upper()
+                
+                if d not in COLUMNS or amt not in COLUMNS or desc not in COLUMNS:
+                    raise ValueError("Invalid column letter")
+                
+                db.update_options(COLUMNS[d], COLUMNS[amt], COLUMNS[desc])
+                messagebox.showinfo('Saved', 'Column settings saved successfully!')
+                
+            except (KeyError, ValueError):
+                messagebox.showerror('Error', 'Please use single letters (A-Z) only.')
+        
+        save_btn = create_button(csv_frame, text="Save Settings", command=save_csv_options)
+        save_btn.pack(pady=15)
+        
+        options = db.get_options()
+        if options:
+            opt = options[0]
+            self.date_entry.insert(0, COLUMNS_LOOKUP.get(opt[1], ''))
+            self.amount_entry.insert(0, COLUMNS_LOOKUP.get(opt[2], ''))
+            self.desc_entry.insert(0, COLUMNS_LOOKUP.get(opt[3], ''))
+        
+        right_frame = ttk.Frame(main_container)
+        right_frame.pack(side=LEFT, fill=BOTH, expand=True)
+        
+        bank_frame = create_labelframe(right_frame, text="Bank Accounts")
+        bank_frame.pack(fill=BOTH, expand=True)
+        
+        columns = ("ID", "Account Name")
+        widths = (60, 200)
+        tree_frame, self.bank_tree = create_styled_treeview(bank_frame, columns, widths)
+        tree_frame.pack(fill=BOTH, expand=True, pady=(0, 15))
+        
+        add_frame = ttk.Frame(bank_frame)
+        add_frame.pack(fill=X)
+        
+        create_label(add_frame, text="New Account:").pack(side=LEFT, padx=(0, 10))
+        self.account_entry = create_entry(add_frame, width=25)
+        self.account_entry.pack(side=LEFT, padx=(0, 10))
+        
+        def add_bank_account():
+            try:
+                name = self.account_entry.get().strip()
+                
+                if not name:
+                    raise Exception("Account name cannot be empty")
+                if len(name) > 25:
+                    raise Exception("Account name too long (max 25 characters)")
+                
+                account_name = ''.join(word.capitalize() if i > 0 else word.lower() 
+                                       for i, word in enumerate(name.split()))
+                
+                db.add_bank_account(account_name)
+                
+                self.account_entry.delete(0, END)
+                self.refresh()
+                self.add_banks_callback()
+                
+            except Exception as error:
+                messagebox.showerror('Error', str(error))
+        
+        add_btn = create_button(add_frame, text="Add Account", command=add_bank_account, bootstyle="success")
+        add_btn.pack(side=LEFT)
+        
+        self.load_bank_accounts()
+    
+    def load_bank_accounts(self):
+        for item in self.bank_tree.get_children():
+            self.bank_tree.delete(item)
+        
+        accounts = db.get_bank_accounts()
+        for i, acc in enumerate(accounts):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            self.bank_tree.insert('', 'end', values=(i + 1, acc[0]), tags=(tag,))
+    
+    def refresh(self):
+        self.load_bank_accounts()
+
+
+class ExpenseTrackerApp:
+    def __init__(self):
+        self.root = ttk.Window(themename=THEME_NAME)
+        self.root.title("Personal Expense Tracker")
+        self.root.geometry("1100x650")
+        self.root.minsize(900, 500)
+        
+        configure_treeview_style(ttk.Style())
+        
+        self.notebook = ttk.Notebook(self.root, bootstyle="dark")
+        self.notebook.pack(expand=True, fill=BOTH, padx=10, pady=10)
+        
+        self.options_tab = Options(self.notebook, self.add_bank_tabs)
+        self.categories_tab = Categories(self.notebook)
+        self.rules_tab = CategoryRules(self.notebook)
+        self.accounts_tab = Accounts(self.notebook)
+        
+        self.notebook.add(self.options_tab, text="  Settings  ")
+        self.notebook.add(self.categories_tab, text="  Categories  ")
+        self.notebook.add(self.rules_tab, text="  Auto-Sort Rules  ")
+        self.notebook.add(self.accounts_tab, text="  Budget Summary  ")
+        
+        self.bank_tabs = {}
+        self.bank_acc_created = []
+        self.add_bank_tabs()
+        
+        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_change)
+    
+    def add_bank_tabs(self):
+        accounts = db.get_bank_accounts()
+        
+        for acc in accounts:
+            name = acc[0]
+            if name not in self.bank_acc_created:
+                self.bank_acc_created.append(name)
+                tab = BankStatementRecon(self.notebook, name)
+                self.notebook.add(tab, text=f"  {name}  ")
+                self.bank_tabs[name] = tab
+    
+    def on_tab_change(self, event):
+        selected_idx = self.notebook.index('current')
+        tab_name = self.notebook.tab(selected_idx, 'text').strip()
+        
+        if selected_idx == 0:
+            self.options_tab.refresh()
+        elif selected_idx == 2:
+            self.rules_tab.refresh()
+        elif selected_idx == 3:
+            self.accounts_tab.refresh()
+        elif selected_idx > 3 and tab_name in self.bank_tabs:
+            self.bank_tabs[tab_name].refresh()
+    
+    def run(self):
+        self.root.mainloop()
+
+
+if __name__ == "__main__":
+    app = ExpenseTrackerApp()
+    app.run()

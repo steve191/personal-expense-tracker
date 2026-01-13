@@ -1,9 +1,9 @@
 # 📚 Personal Expense Tracker
 
-The **Personal Expense Tracker**, a simple yet powerful tool to manage your personal income and expenditure. Built with Python 3 and the Tkinter module, this application provides a user-friendly interface to handle all your transactions seamlessly.
+The **Personal Expense Tracker**, a simple yet powerful tool to manage your personal income and expenditure. Built with Python 3 and ttkbootstrap (modern Tkinter), this application provides a modern dark-themed interface to handle all your transactions seamlessly.
 
-![Python](https://img.shields.io/badge/Python_3.x-blue?label=Python)
-![GUI](https://img.shields.io/badge/tkinter-green?label=GUI)
+![Python](https://img.shields.io/badge/Python_3.11+-blue?label=Python)
+![GUI](https://img.shields.io/badge/ttkbootstrap-green?label=GUI)
 ![Database](https://img.shields.io/badge/SQLite-orange?label=Database)
 ![License](https://img.shields.io/badge/MIT-brightgreen?label=License)
 
@@ -22,21 +22,23 @@ Install using git clone:
 1. **Clone the Repository:**
    ```bash
    git clone https://github.com/Devon-GS/personal-expense-tracker.git
-   cd Personal-Expense-Tracker
+   cd personal-expense-tracker
    ```
 
 2. **Install Dependencies:**
-   - Ensure all required dependencies are installed. You may use:
+   
+   **Option A - Using the install script (Recommended):**
    ```bash
-   python -m venv virt
+   python install.py
+   ```
+   This will automatically install all required packages and verify they're working.
 
-   pip install poetry
-
-   poetry install
+   **Option B - Using pip directly:**
+   ```bash
+   pip install -r requirements.txt
    ```
 
 3. **Run the Application:**
-   - Execute `main.py` in your project directory.
    ```bash
    python main.py
    ```

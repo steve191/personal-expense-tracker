@@ -10,6 +10,8 @@ A Python desktop application for managing personal income and expenses. Built wi
 
 ## Project Structure
 - `main.py` - Main application entry point with modern tabbed interface
+- `install.py` - Dependency installation script (run before first use)
+- `requirements.txt` - Python package dependencies
 - `database.py` - Centralized database helper with connection pooling and parameterized queries
 - `theme.py` - Modern UI theme configuration using ttkbootstrap
 - `categories.py` - Category management with budget tracking
@@ -48,6 +50,7 @@ Run via VNC desktop view: `python main.py`
 See `BUILD.md` for instructions on compiling the app to a standalone Windows .exe file using PyInstaller.
 
 ## Recent Changes
+- January 13, 2026: Added install.py script and requirements.txt for easy dependency installation
 - January 12, 2026: Major UI modernization with ttkbootstrap dark theme
 - January 12, 2026: Code refactoring - centralized database operations, removed globals
 - January 12, 2026: Initial import from GitHub repository

@@ -1,0 +1,5 @@
+ttkbootstrap
+python-dateutil
+pandas
+ofxtools
+pillow

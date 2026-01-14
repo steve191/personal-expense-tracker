@@ -12,7 +12,7 @@ Download and install Python 3.10 or higher from [python.org](https://www.python.
 ### 2. Install Required Packages
 Open Command Prompt and run:
 ```bash
-pip install ttkbootstrap python-dateutil pandas ofxtools pyinstaller
+pip install ttkbootstrap python-dateutil pandas ofxtools pillow pyinstaller
 ```
 
 ## Building the Executable

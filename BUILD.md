@@ -17,7 +17,20 @@ pip install ttkbootstrap python-dateutil pandas ofxtools pillow pyinstaller
 
 ## Building the Executable
 
-### Option 1: Simple Build (Recommended)
+### Option 1: Use the Build Script (Easiest)
+
+Simply double-click `build.bat` or run it from Command Prompt:
+```bash
+build.bat
+```
+
+This script will automatically:
+1. Check that Python is installed
+2. Install all required packages
+3. Build the executable
+4. Show you where to find the result
+
+### Option 2: Manual Build
 
 Run this command in the project directory:
 

@@ -11,6 +11,7 @@ A Python desktop application for managing personal income and expenses. Built wi
 ## Project Structure
 - `main.py` - Main application entry point with modern tabbed interface
 - `install.py` - Dependency installation script (run before first use)
+- `build.bat` - Windows batch script to compile the app to an executable
 - `requirements.txt` - Python package dependencies
 - `database.py` - Centralized database helper with connection pooling and parameterized queries
 - `theme.py` - Modern UI theme configuration using ttkbootstrap
